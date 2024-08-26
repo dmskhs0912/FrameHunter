@@ -54,24 +54,22 @@ class ELFParser:
         return self.elf.get_section_by_name(name)
 
 
-    def get_function_symbols(self) -> list:
+    def get_function_symbols(self):
         """
-        Extracts and returns function symbols from the ELF file.
+        Returns a dictionary of function symbols with their start and end offsets.
 
-        :return: A list of function symbols
+        :return: A dictionary with function names as keys and (start_offset, end_offset) tuples as values
         """
-        functions = []
+        functions = {}
         symtab = self.elf.get_section_by_name('.symtab')
-        if symtab is not None :
+        if symtab is not None:
             for symbol in symtab.iter_symbols():
                 if symbol['st_info']['type'] == 'STT_FUNC':
-                    functions.append({
-                        'name': symbol.name,
-                        'address': symbol['st_value'],
-                        'size': symbol['st_size']
-                    })
+                    start_offset = symbol['st_value']
+                    end_offset = start_offset + symbol['st_size']
+                    functions[symbol.name] = (start_offset, end_offset)
         else:
-            print("Waring: No symbol table found. Function symbols cannot be retrieved.")
+            print("Warning: No symbol table found. Function symbols cannot be retrieved.")
 
         return functions
     
