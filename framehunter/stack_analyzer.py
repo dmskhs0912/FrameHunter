@@ -11,15 +11,16 @@ class StackAnalyzer:
     def __init__(self, elf_file_path: str):
         self.elf_parser = ELFParser(elf_file_path)
         self.disassembler = Disassembler()
-        self.textData = self.elf_parser.get_section_data('.text') # .text 섹션의 데이터를 저장
         self.functions = self.elf_parser.get_function_symbols() # 딕셔너리 형태로 함수 이름과 시작 주소, 끝 주소를 저장
-        self.machine_codes = self.disassembler.disassemble_code(self.textData, )
+        self.machine_codes = self.disassembler.disassemble_code(self.elf_parser.get_section_data('.text'), 
+                                                                self.elf_parser.get_section_offset('.text')) # 기계어 코드를 저장
         self.functions_boundaries = self.disassembler.find_function_boundaries() # 함수의 시작 주소와 끝 주소를 저장
 
-    
 
     def analyze_function_stack(self, function_name: str):
+        """
         
+        """
         pass
 
     def _get_machine_code(self, start_address: int, size: int) -> bytes:

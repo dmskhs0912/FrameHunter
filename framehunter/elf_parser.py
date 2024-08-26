@@ -93,5 +93,17 @@ class ELFParser:
         if section is not None:
             return section.data()
         return None
+    
+    def get_section_offset(self, section_name):
+        """
+        Returns the offset of a specific section.
+
+        :param section_name: The name of the section
+        :return: The offset of the section
+        """
+        section = self.get_section_by_name(section_name)
+        if section is not None:
+            return section['sh_offset']
+        return None
 
 
