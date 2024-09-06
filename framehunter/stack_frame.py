@@ -17,7 +17,7 @@ class StackFrame:
 
         :param function_name: The name or offset of the function.
         :param size: The size of the stack frame.
-        :param return_address_offset: The offset of the return address from RSP.
+        :param return_address_offset: The offset of the return address from RBP.
         :param canary_offset: The offset of the canary value in the stack frame (if used).
         """
         self._function_name = function_name
@@ -60,17 +60,21 @@ class StackFrame:
         """
         Adds a local variable to the stack frame.
 
-        :param offset: The offset from RSP.
+        :param offset: The offset from RBP.
         :param size: The size of the variable in bytes.
         :param instructions: The list of instructions that access the variable.
         """
-        self.local_variables[offset] = (size, instructions)
+        if offset in self._local_variables:
+            instrs = self._local_variables[offset][1]
+        else :
+            instrs = []
+        self._local_variables[offset] = (size, instrs + instructions) 
 
     def get_local_variable(self, offset):
         """
         Returns the size and instructions that access the variable of the local variable at the given offset.
 
-        :param offset: The offset from RSP.
+        :param offset: The offset from RBP.
         :return: The size and instructions of the variable in bytes.
         """
         return self.local_variables.get(offset, None)

@@ -7,6 +7,23 @@
 from .disassembler import Disassembler
 from .elf_parser import ELFParser
 from .stack_frame import StackFrame
+from .utils.parser import *
+
+REGISTER_MAP = {
+    'rdi': 'rdi', 'edi': 'rdi', 'di': 'rdi', 'dil': 'rdi',
+    'rsi': 'rsi', 'esi': 'rsi', 'si': 'rsi', 'sil': 'rsi',
+    'rax': 'rax', 'eax': 'rax', 'ax': 'rax', 'al': 'rax',
+    'rbx': 'rbx', 'ebx': 'rbx', 'bx': 'rbx', 'bl': 'rbx',
+    'rcx': 'rcx', 'ecx': 'rcx', 'cx': 'rcx', 'cl': 'rcx',
+    'rdx': 'rdx', 'edx': 'rdx', 'dx': 'rdx', 'dl': 'rdx',
+    'rbp': 'rbp', 'ebp': 'rbp', 'bp': 'rbp', 'bpl': 'rbp',
+    'rsp': 'rsp', 'esp': 'rsp', 'sp': 'rsp', 'spl': 'rsp',
+    'r8':  'r8',  'r8d': 'r8',  'r8w': 'r8',  'r8b': 'r8',
+    'r9':  'r9',  'r9d': 'r9',  'r9w': 'r9',  'r9b': 'r9'
+}
+
+REGISTER_64BIT_LIST = ['rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi', 'rbp', 'rsp', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
+
 
 class StackAnalyzer:
     def __init__(self, elf_file_path: str):
@@ -25,7 +42,7 @@ class StackAnalyzer:
         :param function_name: The name or offset of the function to analyze
         """
         stack_size = self._get_stack_size(function_name)
-        return_address_offset = stack_size + 8 # Return address offset from RSP
+        return_address_offset = 8 # Return address offset from RBP
         canary_offset = self._get_canary_offset(function_name)
         stack_frame = StackFrame(function_name, stack_size, return_address_offset, canary_offset)
         
@@ -58,7 +75,7 @@ class StackAnalyzer:
                         return int(instr.op_str.split(',')[1].strip(), 16)
                     except:
                         raise ValueError(f'Failed to find stack size for function {function_name}')
-            raise ValueError(f'Failed to find stack size for function {function_name}')
+            return None
         
         else:
             raise NotImplementedError('Only function names are supported for now.')
@@ -88,7 +105,7 @@ class StackAnalyzer:
         Returns the offset of the canary value in the stack frame for the given function.
 
         :param function_name: The name or offset of the function
-        :return: The offset of the canary value from RSP if found, otherwise None
+        :return: The offset of the canary value from RBP if found, otherwise None
         """
         if isinstance(function_name, str): # 해당 함수의 심볼이 존재하는 경우 함수이름으로 검색
             if function_name in self.functions:
@@ -102,8 +119,7 @@ class StackAnalyzer:
                     next_instr = function_code[i+1]
                     if next_instr.mnemonic == 'mov' and next_instr.op_str.startswith('QWORD PTR [rbp-'):
                         try:
-                            rbp_offset = -int(next_instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
-                            return self._convert_to_rsp_offset(rbp_offset, self._get_stack_size(function_name))
+                            return -int(next_instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
                         except:
                             raise ValueError(f'Failed to find canary offset for function {function_name}')
             return None
@@ -119,11 +135,100 @@ class StackAnalyzer:
         """
         asm_code = stack_frame.asm_code
         for instr in asm_code:
-            pass
+            if instr.mnemonic == 'mov' and 'PTR [rbp-' in instr.op_str:
+                if 'BYTE PTR [rbp-' in instr.op_str:
+                    size = 1
+                elif 'WORD PTR [rbp-' in instr.op_str:
+                    size = 2
+                elif 'DWORD PTR [rbp-' in instr.op_str:
+                    size = 4
+                elif 'QWORD PTR [rbp-' in instr.op_str:
+                    size = 8
+                offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
+                stack_frame.add_local_variable(offset, size, [instr])
+            
+            elif instr.mnemonic == 'lea' and '[rbp-' in instr.op_str:
+                pass # TODO: Implement this
 
-                
+    def trace_register(self, stack_frame: StackFrame, target_register, address):
+        """
+        Trace the register value at the given address and check if it uses a local variable in the stack frame.
 
-        
+        :param stack_frame: The stack frame to check
+        :param target_register: The 64 bit register to trace
+        :param address: The address to trace the register value. This should be the address of the instruction that uses the target register.
+        :return: The offset of the local variables if found, otherwise None
+        """
+        # FIXME: 만약 여러 local variable이 사용되는 경우? ex) rsi에 v1 + v2 이 사용되는 경우
+        # FIXME: movzx, movsx, movabs, movsxd 와 같은 경우는?
 
+        asm_code = stack_frame.asm_code
+        if target_register not in REGISTER_64BIT_LIST:
+            raise ValueError('The target register must be a 64-bit register.')
+        instr_index = next((i for i, instr in enumerate(asm_code) if instr.address == address), None)
+        if instr_index is None:
+            raise ValueError(f'Instruction not found at address {hex(address)}')
+
+        for i in range(instr_index, -1, -1):
+            instr = asm_code[i]
+
+            if instr.mnemonic in ['mov', 'add', 'sub']: 
+                dest, src = map(str.strip, instr.op_str.split(','))
+                if REGISTER_MAP[dest] == target_register:
+                    if 'PTR [rbp-' in src: # Local variable
+                        try:
+                            offset_str = src.split('[rbp-')[1].split(']')[0]
+                            offset = -int(offset_str, 16)
+                            return offset 
+                        except (IndexError, ValueError):
+                            continue
+
+                    elif src in REGISTER_MAP:
+                        target_register = REGISTER_MAP[src]
+                        continue
+
+            elif instr.mnemonic == 'lea':
+                dest, src = map(str.strip, instr.op_str.split(','))
+                if REGISTER_MAP[dest] == target_register:
+                    if src.startswith('[') and src.endswith(']'):
+                        parsed_src = parse_memory_reference(src)
+                    else:
+                        parsed_src = {'base': src, 'index': None, 'scale': 1, 'displacement': 0}
+
+                    # FIXME: 좀 더 생각해 봐. 다 고쳐야 함.
+                    if parsed_src['base'] == 'rbp':
+                        offset = -parsed_src['displacement']
+                        return offset
+                    elif parsed_src['index'] == 'rbp':
+                        offset = -parsed_src['displacement']
+                        return offset
+                    else:
+                        target_register = REGISTER_MAP[parsed_src['base']]
+                        continue
+                    
+
+    def find_arguments(self, stack_frame: StackFrame, callee_name):
+        """
+        Finds the offsets of the arguments passed to the callee function if it is a local variable in the stack frame.
+
+        :param stack_frame: The stack frame of the caller function
+        :param callee_name: The name or offset of the callee function
+        :return: A list of list of offsets of the arguments passed to the callee function. The argument that is not a local varible is None.
+        """
+        result = []
+        argument_registers = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+        asm_code = stack_frame.asm_code
+        if isinstance(callee_name, int):
+            callee_name = hex(callee_name)
+
+        if not isinstance(callee_name, str):
+            raise ValueError('Callee name must be a string or an integer.')
         
-        
+        for instr in asm_code:
+            if instr.mnemonic == 'call' and callee_name in instr.op_str:
+                arguments = []
+                for reg in argument_registers:
+                    offset = self.trace_register(stack_frame, reg, instr.address)
+                    arguments.append(offset)
+                result.append(arguments)
+        return result

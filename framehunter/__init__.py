@@ -5,7 +5,7 @@
 # 
 # ---------------------------------------------------
 
-from .elf_parser import *
-from .disassembler import *
+from .stack_analyzer import StackAnalyzer
+
 
 __version__ = '0.0.1'
