@@ -173,7 +173,7 @@ class StackAnalyzer:
         """
         # FIXME: 만약 여러 local variable이 사용되는 경우? ex) rsi에 v1 + v2 이 사용되는 경우
         # FIXME: movzx, movsx, movabs, movsxd 와 같은 경우는?
-        
+
         asm_code = stack_frame.asm_code
         if target_register not in REGISTER_64BIT_LIST:
             raise ValueError('The target register must be a 64-bit register.')
@@ -181,6 +181,7 @@ class StackAnalyzer:
         if instr_index is None:
             raise ValueError(f'Instruction not found at address {hex(address)}')
 
+        logger.debug(f'instr_index : {instr_index}, stmt : {asm_code[instr_index].mnemonic} {asm_code[instr_index].op_str}')
         for i in range(instr_index, -1, -1):
             instr = asm_code[i]
 
@@ -191,6 +192,7 @@ class StackAnalyzer:
                         try:
                             offset_str = src.split('[rbp - ')[1].split(']')[0]
                             offset = -int(offset_str, 16)
+                            logger.debug(f'Found local variable at offset rbp-{hex(-offset)}')
                             return offset 
                         except (IndexError, ValueError):
                             continue
@@ -217,6 +219,7 @@ class StackAnalyzer:
                     else:
                         target_register = REGISTER_MAP[parsed_src['base']]
                         continue
+        return None
                     
 
     def find_arguments(self, stack_frame: StackFrame, callee_name):
@@ -238,6 +241,7 @@ class StackAnalyzer:
         
         logger.debug(f'Finding arguments for function {callee_name} in {stack_frame.function_name}')
         for instr in asm_code:
+            logger.debug(f'instr : {instr.mnemonic} {instr.op_str}')
             if instr.mnemonic == 'call' and callee_name in instr.op_str:
                 arguments = []
                 for reg in argument_registers:
