@@ -187,7 +187,7 @@ class StackAnalyzer:
 
             if instr.mnemonic in ['mov', 'add', 'sub']: 
                 dest, src = map(str.strip, instr.op_str.split(','))
-                if REGISTER_MAP[dest] == target_register:
+                if REGISTER_MAP.get(dest, None) == target_register:
                     if 'ptr [rbp - ' in src: # Local variable
                         try:
                             offset_str = src.split('[rbp - ')[1].split(']')[0]
@@ -203,7 +203,7 @@ class StackAnalyzer:
 
             elif instr.mnemonic == 'lea':
                 dest, src = map(str.strip, instr.op_str.split(','))
-                if REGISTER_MAP[dest] == target_register:
+                if REGISTER_MAP.get(dest, None) == target_register:
                     if src.startswith('[') and src.endswith(']'):
                         parsed_src = parse_memory_reference(src)
                     else:
@@ -220,6 +220,29 @@ class StackAnalyzer:
                         target_register = REGISTER_MAP[parsed_src['base']]
                         continue
         return None
+    
+    def count_arguments(self, function_name) -> int:
+        """
+        Counts the number of arguments passed to the function.
+
+        :param function_name: The name or offset of the function.
+        :return: The number of arguments passed to the function.
+        """
+        if isinstance(function_name, str):
+            if function_name in self.functions:
+                start_address, end_address = self.functions[function_name]
+            else:
+                raise ValueError(f'Function {function_name} not found.')
+        function_code = [instr for instr in self.asm_codes if start_address <= instr.address < end_address]
+        count = 0
+        argument_registers = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+        for instr in function_code:
+            src = instr.op_str.split(',')[1].strip()
+            if instr.mnemonic == 'mov' and REGISTER_MAP.get(src, None) == argument_registers[count]:
+                count += 1
+            elif count != 0:
+                break
+        return count
                     
 
     def find_arguments(self, stack_frame: StackFrame, callee_name):
@@ -239,6 +262,9 @@ class StackAnalyzer:
         if not isinstance(callee_name, str):
             raise ValueError('Callee name must be a string or an integer.')
         
+        num_arguments = self.count_arguments(callee_name)
+        if num_arguments == 0:
+            return result
         callee_offset = self.functions[callee_name][0]
         
         logger.debug(f'Finding arguments for function {callee_name} : {hex(callee_offset)} in {stack_frame.function_name}')
@@ -246,7 +272,8 @@ class StackAnalyzer:
             logger.debug(f'instr : {instr.mnemonic} {instr.op_str}')
             if instr.mnemonic == 'call' and hex(callee_offset) == instr.op_str:
                 arguments = []
-                for reg in argument_registers:
+                for i in range(num_arguments):
+                    reg = argument_registers[i]
                     offset = self.trace_register(stack_frame, reg, instr.address)
                     arguments.append(offset)
                     logger.debug(f'Argument {reg}: {offset}')
