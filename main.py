@@ -6,12 +6,16 @@ def main():
     parser.add_argument('elf_file', type=str, help='The path to the ELF file to analyze.')
     parser.add_argument('function_name', type=str, help='The name of the function to analyze.')
     parser.add_argument('-V', '--visualize', action='store_true', help='Visualize the stack frame.')
+    parser.add_argument('-f', '--function', type=str, help='Finds the offset of arguments of the given function.')
 
     args = parser.parse_args()
 
     stack_analyzer = StackAnalyzer(args.elf_file)
     stack_frame = stack_analyzer.analyze_function_stack(args.function_name)
     stack_analyzer.analyze_local_variables(stack_frame)
+
+    if args.function:
+        res = stack_analyzer.find_arguments(stack_frame, args.function)
 
     if args.visualize:
         pass #TODO: Implement visualization
@@ -28,6 +32,9 @@ def main():
         for offset, value in stack_frame.local_variables.items():
             print(f'rbp-{hex(-offset):<11} | {value[0]:<10}')
         print('----------------------------------------------')
+        if res:
+            print(f'Arguments for function {args.function}:')
+            print(res)
 
     
 
