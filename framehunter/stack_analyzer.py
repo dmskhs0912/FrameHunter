@@ -239,10 +239,12 @@ class StackAnalyzer:
         if not isinstance(callee_name, str):
             raise ValueError('Callee name must be a string or an integer.')
         
-        logger.debug(f'Finding arguments for function {callee_name} in {stack_frame.function_name}')
+        callee_offset = self.functions[callee_name][0]
+        
+        logger.debug(f'Finding arguments for function {callee_name} : {callee_offset} in {stack_frame.function_name}')
         for instr in asm_code:
             logger.debug(f'instr : {instr.mnemonic} {instr.op_str}')
-            if instr.mnemonic == 'call' and callee_name in instr.op_str:
+            if instr.mnemonic == 'call' and str(callee_offset) == instr.op_str:
                 arguments = []
                 for reg in argument_registers:
                     offset = self.trace_register(stack_frame, reg, instr.address)
