@@ -173,7 +173,7 @@ class StackAnalyzer:
         """
         # FIXME: 만약 여러 local variable이 사용되는 경우? ex) rsi에 v1 + v2 이 사용되는 경우
         # FIXME: movzx, movsx, movabs, movsxd 와 같은 경우는?
-
+        
         asm_code = stack_frame.asm_code
         if target_register not in REGISTER_64BIT_LIST:
             raise ValueError('The target register must be a 64-bit register.')
@@ -187,7 +187,7 @@ class StackAnalyzer:
             if instr.mnemonic in ['mov', 'add', 'sub']: 
                 dest, src = map(str.strip, instr.op_str.split(','))
                 if REGISTER_MAP[dest] == target_register:
-                    if 'PTR [rbp-' in src: # Local variable
+                    if 'ptr [rbp - ' in src: # Local variable
                         try:
                             offset_str = src.split('[rbp - ')[1].split(']')[0]
                             offset = -int(offset_str, 16)
@@ -236,6 +236,7 @@ class StackAnalyzer:
         if not isinstance(callee_name, str):
             raise ValueError('Callee name must be a string or an integer.')
         
+        logger.debug(f'Finding arguments for function {callee_name} in {stack_frame.function_name}')
         for instr in asm_code:
             if instr.mnemonic == 'call' and callee_name in instr.op_str:
                 arguments = []
