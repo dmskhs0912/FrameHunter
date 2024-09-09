@@ -237,9 +237,10 @@ class StackAnalyzer:
         count = 0
         argument_registers = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
         for instr in function_code:
-            src = instr.op_str.split(',')[1].strip()
-            if instr.mnemonic == 'mov' and REGISTER_MAP.get(src, None) == argument_registers[count]:
-                count += 1
+            if instr.mnemonic == 'mov':
+                src = instr.op_str.split(',')[1].strip()
+                if REGISTER_MAP.get(src, None) in argument_registers:
+                    count += 1
             elif count != 0:
                 break
         return count
