@@ -19,12 +19,13 @@ def main():
         print(f'Stack Frame Analysis for function {args.function_name}')
         print('----------------------------------------------')
         print(f'Stack Size: {stack_frame.stack_size}')
-        print(f'Return Address Offset: {stack_frame.return_address_offset}')
+        print(f'Return Address Offset: [rbp+{stack_frame.return_address_offset}]')
         if stack_frame.canary_offset:
             print(f'Canary Offset: {stack_frame.canary_offset}')
         print('Local Variables:')
         print('   offset   |   size   ')
         print('----------------------')
+        stack_analyzer.analyze_local_variables(stack_frame)
         for offset, size in stack_frame.local_variables.items():
             print(f'   rbp-{hex(-offset)}   |   {size}   ')
         print('----------------------------------------------')
