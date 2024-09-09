@@ -8,6 +8,10 @@ from .disassembler import Disassembler
 from .elf_parser import ELFParser
 from .stack_frame import StackFrame
 from .utils.parser import *
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 REGISTER_MAP = {
     'rdi': 'rdi', 'edi': 'rdi', 'di': 'rdi', 'dil': 'rdi',
@@ -133,6 +137,7 @@ class StackAnalyzer:
 
         :param stack_frame: The stack frame to update
         """
+        logger.debug(f'Analyzing local variables for function {stack_frame.function_name}')
         asm_code = stack_frame.asm_code
         for instr in asm_code:
             if instr.mnemonic == 'mov' and 'PTR [rbp-' in instr.op_str:
@@ -146,6 +151,7 @@ class StackAnalyzer:
                     size = 8
                 offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
                 stack_frame.add_local_variable(offset, size, [instr])
+                logger.debug(f'Found local variable at offset -{hex(-offset)} with size {size} bytes.')
             
             elif instr.mnemonic == 'lea' and '[rbp-' in instr.op_str:
                 pass # TODO: Implement this
