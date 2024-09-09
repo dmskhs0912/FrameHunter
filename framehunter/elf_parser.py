@@ -18,10 +18,18 @@ class ELFParser:
         :param binary_path: Path to the ELF binary file to analyze
         """
         self.binary_path = binary_path
-        self.elf = None
-        self._load_elf()
+        if not os.path.exists(binary_path):
+            raise FileNotFoundError(f'File not found: {binary_path}')
+        try:
+            self.binary_file = open(binary_path, 'rb')
+            self.elf = ELFFile(self.binary_file)
+        except Exception as e:
+            raise RuntimeError(f'An error occurred while loading the ELF file: {e}')
+        
+    def __del__(self):
+        self.binary_file.close()
 
-
+    
     def _load_elf(self):
         """Load the target ELF file"""
         if not os.path.exists(self.binary_path):
@@ -32,7 +40,7 @@ class ELFParser:
                 self.elf = ELFFile(f)
         except Exception as e:
             raise RuntimeError(f'An error occurred while loading the ELF file: {e}')
-
+    
 
     
     def get_sections(self) -> list:
@@ -43,7 +51,7 @@ class ELFParser:
         """
         return [section for section in self.elf.iter_sections()]
     
-
+    # FIXME: '.symtab' 불러오는데 문제 있음
     def get_section_by_name(self, name):
         """
         Returns a specific section by its name.
@@ -51,7 +59,10 @@ class ELFParser:
         :param name: The name of the section (e.g. '.text')
         :return: The corresponding section object if it exists (if not, return None)
         """
-        return self.elf.get_section_by_name(name)
+        try:
+            return self.elf.get_section_by_name(name)
+        except:
+            raise RuntimeError(f'Failed to get section {name}')
 
 
     def get_function_symbols(self):
