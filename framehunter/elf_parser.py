@@ -51,7 +51,7 @@ class ELFParser:
         """
         return [section for section in self.elf.iter_sections()]
     
-    # FIXME: '.symtab' 불러오는데 문제 있음
+
     def get_section_by_name(self, name):
         """
         Returns a specific section by its name.
@@ -73,8 +73,16 @@ class ELFParser:
         """
         functions = {}
         symtab = self.elf.get_section_by_name('.symtab')
+        dynsym = self.elf.get_section_by_name('.dynsym')
         if symtab is not None:
             for symbol in symtab.iter_symbols():
+                if symbol['st_info']['type'] == 'STT_FUNC':
+                    start_offset = symbol['st_value']
+                    end_offset = start_offset + symbol['st_size']
+                    functions[symbol.name] = (start_offset, end_offset)
+                    
+        if dynsym is not None:
+            for symbol in dynsym.iter_symbols():
                 if symbol['st_info']['type'] == 'STT_FUNC':
                     start_offset = symbol['st_value']
                     end_offset = start_offset + symbol['st_size']
