@@ -74,15 +74,24 @@ class ELFParser:
         functions = {}
         symtab = self.elf.get_section_by_name('.symtab')
         dynsym = self.elf.get_section_by_name('.dynsym')
+        plt = self.elf.get_section_by_name('.plt')
         if symtab is not None:
             for symbol in symtab.iter_symbols():
                 if symbol['st_info']['type'] == 'STT_FUNC':
                     start_offset = symbol['st_value']
                     end_offset = start_offset + symbol['st_size']
                     functions[symbol.name] = (start_offset, end_offset)
-                    
+
         if dynsym is not None:
             for symbol in dynsym.iter_symbols():
+                if symbol['st_info']['type'] == 'STT_FUNC':
+                    start_offset = symbol['st_value']
+                    end_offset = start_offset + symbol['st_size']
+                    functions[symbol.name] = (start_offset, end_offset)
+
+        if plt is not None:
+            for symbol in plt.iter_symbols():
+                print(symbol)
                 if symbol['st_info']['type'] == 'STT_FUNC':
                     start_offset = symbol['st_value']
                     end_offset = start_offset + symbol['st_size']
