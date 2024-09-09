@@ -140,6 +140,7 @@ class StackAnalyzer:
         logger.debug(f'Analyzing local variables for function {stack_frame.function_name}')
         asm_code = stack_frame.asm_code
         for instr in asm_code:
+            logger.debug(f'Analyzing instruction {instr.mnemonic} {instr.op_str}')
             if instr.mnemonic == 'mov' and 'PTR [rbp-' in instr.op_str:
                 if 'BYTE PTR [rbp-' in instr.op_str:
                     size = 1
