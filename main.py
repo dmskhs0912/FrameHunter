@@ -16,6 +16,10 @@ def main():
 
     if args.function:
         res = stack_analyzer.find_arguments(stack_frame, args.function)
+        for i, item in enumerate(res):
+            for j, offset in enumerate(item):
+                res[i][j] = 'rbp - ' + hex(-offset)
+                
 
     if args.visualize:
         pass #TODO: Implement visualization
