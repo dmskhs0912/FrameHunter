@@ -74,8 +74,6 @@ class ELFParser:
         functions = {}
         symtab = self.elf.get_section_by_name('.symtab')
         dynsym = self.elf.get_section_by_name('.dynsym')
-        plt = self.elf.get_section_by_name('.plt')
-        print(plt)
         if symtab is not None:
             for symbol in symtab.iter_symbols():
                 if symbol['st_info']['type'] == 'STT_FUNC':
@@ -90,17 +88,16 @@ class ELFParser:
                     end_offset = start_offset + symbol['st_size']
                     functions[symbol.name] = (start_offset, end_offset)
 
-        if plt is not None:
-            for symbol in plt.iter_symbols():
-                print(symbol)
-                if symbol['st_info']['type'] == 'STT_FUNC':
-                    start_offset = symbol['st_value']
-                    end_offset = start_offset + symbol['st_size']
-                    functions[symbol.name] = (start_offset, end_offset)
         else:
             print("Warning: No symbol table found. Function symbols cannot be retrieved.")
 
+        plt = self.elf.get_section_by_name('.plt')
+        if plt is not None:
+            pass #TODO: Implement this.
+
+
         return functions
+    
     
     def get_text_section(self):
         """
