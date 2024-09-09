@@ -2,7 +2,10 @@ import argparse
 from framehunter.stack_analyzer import StackAnalyzer
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze stack frames of a binary.')
+    parser = argparse.ArgumentParser(
+        description='Analyze stack frames of a binary.',
+        usage='%(prog)s [options] elf_file function_name'
+        )
     parser.add_argument('elf_file', type=str, help='The path to the ELF file to analyze.')
     parser.add_argument('function_name', type=str, help='The name of the function to analyze.')
     parser.add_argument('-V', '--visualize', action='store_true', help='Visualize the stack frame.')
@@ -14,11 +17,12 @@ def main():
     stack_frame = stack_analyzer.analyze_function_stack(args.function_name)
     stack_analyzer.analyze_local_variables(stack_frame)
 
+    res = None
     if args.function:
         res = stack_analyzer.find_arguments(stack_frame, args.function)
         for i, item in enumerate(res):
             for j, offset in enumerate(item):
-                res[i][j] = 'rbp - ' + hex(-offset)
+                res[i][j] = 'rbp-' + hex(-offset)
                 
 
     if args.visualize:

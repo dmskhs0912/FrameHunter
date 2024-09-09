@@ -10,7 +10,7 @@ if not os.path.exists(log_directory):
 logging.basicConfig(
     filename=log_file,
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(message)s',
     filemode='w'
 )
 

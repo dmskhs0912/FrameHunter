@@ -33,6 +33,7 @@ class StackAnalyzer:
         self.functions = self.elf_parser.get_function_symbols() # 딕셔너리 형태로 함수 이름과 시작 주소, 끝 주소를 저장
         self.asm_codes = self.disassembler.disassemble_code(self.elf_parser.get_section_data('.text'), 
                                                                 self.elf_parser.get_section_offset('.text')) # 어셈블리 코드를 저장
+        logger.debug(f'Functions: {self.functions}')
         #self.functions_boundaries = self.disassembler.find_function_boundaries() # 함수의 시작 주소와 끝 주소를 저장
 
 
