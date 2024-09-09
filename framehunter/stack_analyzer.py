@@ -189,7 +189,7 @@ class StackAnalyzer:
                 if REGISTER_MAP[dest] == target_register:
                     if 'PTR [rbp-' in src: # Local variable
                         try:
-                            offset_str = src.split('[rbp-')[1].split(']')[0]
+                            offset_str = src.split('[rbp - ')[1].split(']')[0]
                             offset = -int(offset_str, 16)
                             return offset 
                         except (IndexError, ValueError):
@@ -242,5 +242,6 @@ class StackAnalyzer:
                 for reg in argument_registers:
                     offset = self.trace_register(stack_frame, reg, instr.address)
                     arguments.append(offset)
+                    logger.debug(f'Argument {reg}: {offset}')
                 result.append(arguments)
         return result
