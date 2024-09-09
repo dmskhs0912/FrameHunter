@@ -8,10 +8,7 @@ from .disassembler import Disassembler
 from .elf_parser import ELFParser
 from .stack_frame import StackFrame
 from .utils.parser import *
-import logging
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from .utils.logger import logger
 
 REGISTER_MAP = {
     'rdi': 'rdi', 'edi': 'rdi', 'di': 'rdi', 'dil': 'rdi',
@@ -151,7 +148,9 @@ class StackAnalyzer:
                 elif 'qword ptr [rbp - ' in instr.op_str:
                     size = 8
                 offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
-                stack_frame.add_local_variable(offset, size, [instr])
+                if offset == stack_frame.canary_offset:
+                    continue
+                stack_frame.add_local_variable(offset, size, [instr.mnemonic + ' ' + instr.op_str])
                 logger.debug(f'Found local variable at offset -{hex(-offset)} with size {size} bytes.')
             
             elif instr.mnemonic == 'lea' and '[rbp-' in instr.op_str:
