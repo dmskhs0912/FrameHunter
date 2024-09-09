@@ -141,12 +141,13 @@ class StackAnalyzer:
             if instr.mnemonic == 'mov' and 'ptr [rbp - ' in instr.op_str:
                 if 'byte ptr [rbp - ' in instr.op_str:
                     size = 1
-                elif 'word ptr [rbp - ' in instr.op_str:
-                    size = 2
                 elif 'dword ptr [rbp - ' in instr.op_str:
                     size = 4
                 elif 'qword ptr [rbp - ' in instr.op_str:
                     size = 8
+                elif 'word ptr [rbp - ' in instr.op_str:
+                    size = 2
+                    
                 offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
                 if offset == stack_frame.canary_offset:
                     continue

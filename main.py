@@ -25,8 +25,8 @@ def main():
         print('Local Variables:')
         print('   offset   |   size   ')
         print('----------------------')
-        for offset, size in stack_frame.local_variables.items():
-            print(f'   rbp-{hex(-offset)}   |   {size}   ')
+        for offset, value in stack_frame.local_variables.items():
+            print(f'   rbp-{hex(-offset)}   |   {value[0]}   ')
         print('----------------------------------------------')
 
     
