@@ -75,6 +75,7 @@ class ELFParser:
         symtab = self.elf.get_section_by_name('.symtab')
         dynsym = self.elf.get_section_by_name('.dynsym')
         plt = self.elf.get_section_by_name('.plt')
+        print(plt)
         if symtab is not None:
             for symbol in symtab.iter_symbols():
                 if symbol['st_info']['type'] == 'STT_FUNC':
