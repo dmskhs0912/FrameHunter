@@ -23,10 +23,10 @@ def main():
         if stack_frame.canary_offset:
             print(f'Canary Offset: {stack_frame.canary_offset}')
         print('Local Variables:')
-        print('   offset   |   size   ')
-        print('----------------------')
+        print(f'{"offset":<15} | {"size":<10}')  # 헤더 정렬
+        print('------------------------------')
         for offset, value in stack_frame.local_variables.items():
-            print(f'   rbp-{hex(-offset)}   |   {value[0]}   ')
+            print(f'rbp-{hex(-offset):<11} | {value[0]:<10}')
         print('----------------------------------------------')
 
     

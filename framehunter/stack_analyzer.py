@@ -54,6 +54,11 @@ class StackAnalyzer:
                 raise ValueError(f'Function {function_name} not found.')
             function_code = [instr for instr in self.asm_codes if start_address <= instr.address < end_address]
             stack_frame.asm_code = function_code
+        
+        logger.debug(f'Analyzed stack frame for function {function_name}')
+        logger.debug(f'Stack Size: {stack_frame.stack_size}')
+        logger.debug(f'Return Address Offset: [rbp+{stack_frame.return_address_offset}]')
+        logger.debug(f'Canary Offset: {stack_frame.canary_offset}')
         return stack_frame
 
     def _get_stack_size(self, function_name) -> int:
@@ -147,7 +152,7 @@ class StackAnalyzer:
                     size = 8
                 elif 'word ptr [rbp - ' in instr.op_str:
                     size = 2
-                    
+
                 offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
                 if offset == stack_frame.canary_offset:
                     continue
