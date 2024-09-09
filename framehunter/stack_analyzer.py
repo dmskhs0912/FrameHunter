@@ -140,15 +140,15 @@ class StackAnalyzer:
         logger.debug(f'Analyzing local variables for function {stack_frame.function_name}')
         asm_code = stack_frame.asm_code
         for instr in asm_code:
-            logger.debug(f'Analyzing instruction {instr.mnemonic} {instr.op_str}')
-            if instr.mnemonic == 'mov' and 'PTR [rbp-' in instr.op_str:
-                if 'BYTE PTR [rbp-' in instr.op_str:
+            #logger.debug(f'Analyzing instruction {instr.mnemonic} {instr.op_str}')
+            if instr.mnemonic == 'mov' and 'ptr [rbp - ' in instr.op_str:
+                if 'byte ptr [rbp - ' in instr.op_str:
                     size = 1
-                elif 'WORD PTR [rbp-' in instr.op_str:
+                elif 'word ptr [rbp - ' in instr.op_str:
                     size = 2
-                elif 'DWORD PTR [rbp-' in instr.op_str:
+                elif 'dword ptr [rbp - ' in instr.op_str:
                     size = 4
-                elif 'QWORD PTR [rbp-' in instr.op_str:
+                elif 'qword ptr [rbp - ' in instr.op_str:
                     size = 8
                 offset = -int(instr.op_str.split('[')[1].split(']')[0].split('-')[1].strip(), 16)
                 stack_frame.add_local_variable(offset, size, [instr])
